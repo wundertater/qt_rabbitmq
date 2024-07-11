@@ -1,3 +1,3 @@
-# 57-py-rabbitmq-qt-template
+# 1627-rabbitmq-qt
 
-Работа с брокером сообщений (LEARNING_CENTER-57)
+Работа с брокером сообщений
