@@ -1,0 +1,14 @@
+syntax = "proto2";
+package TestTask.Messages;
+
+message Request {
+	required string return_address = 1; // Имя exchange или очереди, куда сервер должен послать ответ
+        required string request_id = 2; // Идентификатор запроса
+        optional float process_time_in_seconds = 3; // Время обработки данного запроса на сервере
+	required int32 request = 4; // Запрос (число)
+}
+
+message Response {
+        required string request_id = 1; // Идентификатор запроса, для которого дан этот ответ
+	required int32 response = 2; // Ответ (удвоенное число)
+}
