@@ -14,6 +14,8 @@ class WaitingResponseState(BaseState):
         pass
 
     def run(self):
+        self.broker_client.server_state_response_signal.emit("Ожидание ответа от сервера", "Неопределено")
+
         def on_response(ch, method, properties, body):
             if properties.correlation_id == self.request_id:
                 # отменяем подписку
@@ -23,7 +25,9 @@ class WaitingResponseState(BaseState):
                     self.timer.stop()
                 self.broker_client.state = self.broker_client.response_received_state
                 self.broker_client.state.body = body  # передаем в состояние ответ
-                self.broker_client.state.run()
+                self.broker_client.run()
+            else:
+                self.broker_client.logger.debug(f"Неподходящий ответ с id: {properties.correlation_id}")
 
         self.consumer_tag = self.broker_client.channel.basic_consume(
             queue=self.broker_client.client_queue_name,
@@ -31,13 +35,18 @@ class WaitingResponseState(BaseState):
             auto_ack=True
         )
 
-        # запускаем QTimer для регулярного polling
-        self.timer = QTimer()
-        self.timer.setInterval(50)
-        self.timer.timeout.connect(lambda: self.broker_client.channel.connection.process_data_events(time_limit=0))
-        self.timer.start()
+        try:
+            # запускаем QTimer для регулярного polling
+            self.timer = QTimer()
+            self.timer.setInterval(50)
+            self.timer.timeout.connect(lambda: self.broker_client.channel.connection.process_data_events(time_limit=0))
+            self.timer.start()
+            self.broker_client.logger.info("Ожидание ответа...")
 
-        self.broker_client.logger.info("Ожидание ответа...")
+        except Exception as e:
+            self.broker_client.logger.error(f"Ошибка получения ответа: {e}")
+            self.broker_client.state = self.broker_client.response_receiving_error_state
+            self.broker_client.run()
 
     def send_request(self, request_num: int, delay: float = 0.0):
         pass
@@ -51,3 +60,5 @@ class WaitingResponseState(BaseState):
             self.timer.stop()
 
         self.broker_client.logger.info("Ожидание ответа отменено пользователем")
+        self.broker_client.state = self.broker_client.waiting_cancelled_state
+        self.broker_client.run()

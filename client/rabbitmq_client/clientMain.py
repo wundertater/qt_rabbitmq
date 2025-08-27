@@ -19,15 +19,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.logger = get_logger(self.ui)
 
         self.settings = QSettings("../client_config.ini", QSettings.IniFormat)
-        self.is_settings_editable = True  # управляется сигналом is_settings_editable_signal с брокера
+        self.is_settings_editable = True
 
         self.broker_worker = BrokerWorker(self.logger, self.settings)
         self.broker_thread = QThread()
         self.broker_worker.moveToThread(self.broker_thread)
-        self.broker_worker.ready_signal.connect(self.on_ready)  # сигнал брокера о готовности работы (если подключен)
-        self.broker_worker.is_settings_editable_signal.connect(  # сигнал брокера о возможности редактировать настройки
-            lambda editable: setattr(self, "is_settings_editable", editable)
-        )
+
+        self.broker_worker.request_sending_signal.connect(self.on_sending_request)  # сигнал брокера об отправке запроса
+        self.broker_worker.server_state_response_signal.connect(
+            self.on_server_state_update)  # сигнал о состоянии сервера и ответе
         self.request_signal.connect(self.broker_worker.send_request)
         self.cancel_signal.connect(self.broker_worker.cancel_request)
         self.connect_signal.connect(self.broker_worker.connect)
@@ -38,25 +38,28 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.cancelButton.clicked.connect(self.on_cancel)
         self.ui.settingsButton.clicked.connect(self.on_settings)
 
-    @pyqtSlot()
-    def on_ready(self):
-        # Функция срабатывает при успешном подключении к брокеру
-        self.ui.sendRequestButton.setEnabled(True)
-        self.logger.info("Для отправки запроса нажмите кнопку отправить")
+    @pyqtSlot(str, str)
+    def on_server_state_update(self, server_state: str, response: str):
+        # Обновляет надпись состояния сервера и ответ
+        self.ui.serverStateLabel.setText(server_state)
+        self.ui.serverResponseLabel.setText(response)
+
+    @pyqtSlot(bool)
+    def on_sending_request(self, is_req_send: bool):
+        # При сигнале отправка запроса от брокера блокирует кнопку отправить, разблокирует кнопку отмена, блокирует изменение настроек
+        self.ui.sendRequestButton.setEnabled(not is_req_send)
+        self.ui.cancelButton.setEnabled(is_req_send)
+        self.is_settings_editable = not is_req_send
 
     @pyqtSlot()
     def on_send(self):
         value = self.ui.requestSpinBox.value()
         delay = self.ui.delaySpinBox.value() if self.ui.useDelayCheckBox.isChecked() else 0.0
         self.request_signal.emit(value, delay)
-        self.ui.cancelButton.setEnabled(True)
-        self.logger.info(f"Отправка запроса: {value}, delay={delay}")
 
     @pyqtSlot()
     def on_cancel(self):
-        self.ui.cancelButton.setEnabled(False)
         self.cancel_signal.emit()
-        self.logger.info("Отмена запроса")
 
     @pyqtSlot()
     def on_settings(self):

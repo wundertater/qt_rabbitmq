@@ -23,4 +23,6 @@ class ResponseReceivedState(BaseState):
     def run(self):
         response = Response()
         response.ParseFromString(self.body)
+        self.broker_client.server_state_response_signal.emit("Ответ получен", str(response.response))
         self.broker_client.logger.info(f"Ответ от сервера: {response.response}")
+        self.broker_client.request_sending_signal.emit(False)

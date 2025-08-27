@@ -12,8 +12,8 @@ class SettingsDialog(QDialog, Ui_dialog):
     def load_settings(self):
         self.hostLineEdit.setText(self.settings.value("broker/host", "localhost"))
         self.portSpinBox.setValue(int(self.settings.value("broker/port", 5672)))
-        self.loginLineEdit.setText(self.settings.value("broker/login", "guest"))
-        self.passwordLineEdit.setText(self.settings.value("broker/password", "guest"))
+        self.loginLineEdit.setText(self.settings.value("broker/login"))
+        self.passwordLineEdit.setText(self.settings.value("broker/password"))
         self.exchangeLineEdit.setText(self.settings.value("broker/exchange"))
         self.queue_nameLineEdit.setText(self.settings.value("broker/queue_name"))
         self.routing_keyLineEdit.setText(self.settings.value("broker/routing_key"))

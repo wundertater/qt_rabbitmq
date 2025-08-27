@@ -1,12 +1,14 @@
 # Файл содержит класс-контекст управляющий отдельными состояниями
 from PyQt5.QtCore import QObject, pyqtSlot, QSettings, pyqtSignal
 from client.rabbitmq_client.states import (new_request_state, sending_request_state, waiting_response_state,
-                                           response_received_state)
+                                           response_received_state, waiting_cancelled_state,
+                                           response_receiving_error_state, request_sending_error_state)
 
 
 class BrokerWorker(QObject):
-    ready_signal = pyqtSignal()  # сигнал брокера о готовности работы (если подключен)
-    is_settings_editable_signal = pyqtSignal(bool)  # сигнал брокера о возможности редактирования настроек
+    # Сигнал брокера об отправке запроса: блокирует кнопку отправить, брокирует изменение настроек, разблокирует кнопку отмены
+    request_sending_signal = pyqtSignal(bool)
+    server_state_response_signal = pyqtSignal(str, str)  # сигнал о состоянии сервера и ответе
 
     def __init__(self, logger, settings: QSettings):
         super().__init__()
@@ -15,6 +17,9 @@ class BrokerWorker(QObject):
         self.sending_request_state = sending_request_state.SendingRequestState(self)
         self.waiting_response_state = waiting_response_state.WaitingResponseState(self)
         self.response_received_state = response_received_state.ResponseReceivedState(self)
+        self.waiting_cancelled_state = waiting_cancelled_state.WaitingCancelledState(self)
+        self.response_receiving_error_state = response_receiving_error_state.ResponseReceivingErrorState(self)
+        self.request_sending_error_state = request_sending_error_state.RequestSendingErrorState(self)
 
         self.state = self.new_request_state  # self.state хранит текущее состояние, первоначальное состояние - новый запрос
         self.logger = logger
@@ -38,3 +43,6 @@ class BrokerWorker(QObject):
     @pyqtSlot()
     def cancel_request(self):
         self.state.cancel_request()
+
+    def run(self):
+        self.state.run()

@@ -32,7 +32,7 @@ class RabbitMQServer:
         self.logger = setup_logger(logging_level, logging_filepath)
 
         self.con_address = settings['Server']['host']
-        self.con_port = int(settings['Server'].get('port'))
+        self.con_port = int(settings['Server'].get('port', 5672))
         self.login = settings['Server'].get('login')
         self.password = settings['Server'].get('password')
 

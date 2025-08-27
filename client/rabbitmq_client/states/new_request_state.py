@@ -10,15 +10,24 @@ class NewRequestState(BaseState):
 
     def connect(self):
         try:
+            self.broker_client.server_state_response_signal.emit("Подключение к брокеру", "Неопределено")
             self.broker_client.settings.sync()
             settings = self.broker_client.settings
-            credentials = pika.PlainCredentials(username=settings.value("broker/login", defaultValue="guest"),
-                                                password=settings.value("broker/password", defaultValue="guest"))
-            broker_conn_params = pika.ConnectionParameters(host=settings.value("broker/host", defaultValue="localhost"),
-                                                           port=settings.value("broker/port", defaultValue=5672),
-                                                           credentials=credentials,
-                                                           socket_timeout=float(
-                                                               settings.value("client/timeout", defaultValue=5.0)))
+
+            # Получаем логин и пароль из настроек
+            username = settings.value("broker/login")
+            password = settings.value("broker/password")
+            # Создаем параметры подключения
+            broker_conn_params = pika.ConnectionParameters(
+                host=settings.value("broker/host", defaultValue="localhost"),
+                port=settings.value("broker/port", defaultValue=5672),
+                socket_timeout=float(settings.value("client/timeout", defaultValue=5.0))
+            )
+            # Добавляем credentials только если они указаны в настройках
+            if username and password:
+                credentials = pika.PlainCredentials(username=username, password=password)
+                broker_conn_params.credentials = credentials
+
             # Для предотвращения создания множества подключений одним пользователем закрываем предыдущее соединение
             if getattr(self.broker_client, "connection", None):
                 try:
@@ -38,12 +47,17 @@ class NewRequestState(BaseState):
             self.broker_client.connection = pika.BlockingConnection(broker_conn_params)
             self.broker_client.channel = self.broker_client.connection.channel()
             self.broker_client.channel.queue_declare(self.broker_client.client_queue_name, exclusive=True)
-            self.broker_client.logger.info("Подключено к брокеру")
-            self.broker_client.ready_signal.emit()
+
+            self.broker_client.logger.debug("Подключено к брокеру")
+            self.broker_client.logger.info("Для отправки запроса нажмите кнопку отправить")
+            self.broker_client.server_state_response_signal.emit("Подключено", "Неопределено")
+            # Меняем состояние брокера
             self.broker_client.state = self.broker_client.sending_request_state
+            self.broker_client.request_sending_signal.emit(False)
+
         except pika.exceptions.AMQPConnectionError as e:
             self.broker_client.logger.error(
-                f"Не удалось подключиться к брокеру, попробуйте изменить настройки подключения {e}")
+                f"Не удалось подключиться к брокеру, попробуйте изменить настройки подключения: {e}")
 
     def send_request(self, request_num: int, delay: float = 0.0):
         pass
