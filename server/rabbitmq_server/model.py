@@ -35,7 +35,6 @@ class RabbitMQServer:
         self.con_port = int(settings['Server'].get('port'))
         self.login = settings['Server'].get('login')
         self.password = settings['Server'].get('password')
-        self.virtualhost = settings['Server'].get('virtualhost')
 
         self.queue_name = settings['Server']['queue_name']
         self.exchange_name = settings['Server']['exchange_name']
@@ -50,7 +49,6 @@ class RabbitMQServer:
                 connection = await aio_pika.connect_robust(host=self.con_address, port=self.con_port,
                                                            login=self.login,
                                                            password=self.password,
-                                                           virtualhost=self.virtualhost,
                                                            )
                 async with connection:
                     self.channel = await connection.channel()
