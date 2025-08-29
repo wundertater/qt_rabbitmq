@@ -11,7 +11,7 @@ stages:
 unit_tests:
   stage: test
   services:
-    - name: rabbitmq:3.11-management
+    - name: rabbitmq:latest
       alias: rabbitmq
   variables:
     RABBITMQ_HOST: rabbitmq

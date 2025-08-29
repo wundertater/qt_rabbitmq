@@ -27,14 +27,24 @@ class TestRabbitMQServer(unittest.IsolatedAsyncioTestCase):
 
         # Запускаем сервер в отдельной задаче
         self.server_task = asyncio.create_task(self.server.connect())
-        await asyncio.sleep(3)  # даём время серверу подключиться
 
         # Подключение клиента
         self.client_connection = await aio_pika.connect_robust(
-            host="localhost",
-            port=5672
+            host=os.getenv("RABBITMQ_HOST", "localhost"),
+            port=int(os.getenv("RABBITMQ_PORT", 5672)),
         )
+
         self.client_channel = await self.client_connection.channel()
+
+        # ждём пока сервер создаст exchange
+        for _ in range(20):  # максимум 20 попыток
+            try:
+                await self.client_channel.get_exchange(self.settings["Server"]["exchange_name"])
+                break
+            except Exception:
+                await asyncio.sleep(0.5)  # ждём полсекунды и пробуем снова
+        else:
+            raise TimeoutError("Не удалось дождаться запуска сервера")
 
         # Временная очередь для ответа
         self.callback_queue = await self.client_channel.declare_queue(exclusive=True)
