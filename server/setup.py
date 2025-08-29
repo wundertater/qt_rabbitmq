@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='rabbitmq_server',
@@ -9,5 +9,6 @@ setup(
     description='Работа с брокером сообщений, серверная часть',
     long_description="",
     zip_safe=False,
-    packages=['rabbitmq_server'],
+    packages=find_packages(where="."),  # ищем пакеты внутри server/
+    package_dir={"": "."},
 )
