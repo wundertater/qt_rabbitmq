@@ -9,3 +9,6 @@ __pycache__/
 MANIFEST
 *.pyc
 *.log
+*_pb2.py
+*_ui.py
+
