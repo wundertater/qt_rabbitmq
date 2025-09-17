@@ -6,9 +6,5 @@ dist/
 build/
 __pycache__/
 *.egg-info/
-MANIFEST
-*.pyc
 *.log
-*_pb2.py
-*_ui.py
 

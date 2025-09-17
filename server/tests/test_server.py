@@ -1,3 +1,4 @@
+"""Тест реального подключения к брокеру, отправка тестового запроса"""
 import os
 import unittest
 import asyncio

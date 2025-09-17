@@ -1,3 +1,4 @@
+"""Точка запуска для клиента"""
 from PyQt5.QtWidgets import QApplication
 import sys
 from clientMain import MainWindow

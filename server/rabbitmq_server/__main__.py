@@ -1,3 +1,4 @@
+"""Точка запуска для сервера"""
 import configparser
 from model import RabbitMQServer
 
